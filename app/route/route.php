@@ -32,6 +32,9 @@ $app->group('/cliente', function (RouteCollectorProxy $group) {
     $group->get('/cadastro', cliente::class . ':cadastro')->add(Middleware::authentication());
     $group->post('/listcliente', cliente::class . ':listcliente');
     $group->post('/insert', cliente::class . ':insert');
+    $group->get('/alterar/{id}', User::class . ':alterar')->add(Middleware::authentication());
+    $group->post('/update', User::class . ':update');
+    $group->post('/delete', User::class . ':delete');
 });
 $app->group('/empresas', function (RouteCollectorProxy $group) {
     $group->get('/lista', Empresas::class . ':lista')->add(Middleware::authentication());

@@ -2,9 +2,11 @@
 
 namespace app\controller;
 
+use app\database\builder\DeleteQuery;
 use app\database\builder\SelectQuery;
 
 use app\database\builder\InsertQuery;
+use app\database\builder\UpdateQuery;
 
 class cliente extends Base
 {
@@ -84,8 +86,8 @@ class cliente extends Base
                     $value['cpf_cnpj'],
                     $value['rg_ie'],
                     $value['data_nascimento_abertura'],
-                    "<button class='btn btn-warning'>Editar</button>
-                    <button class='btn btn-danger'>Excluir</button>"
+                    "<a href='/cliente/alterar/{$value['id']}' class='btn btn-warning'>Editar</a>
+                    <button type='button'  onclick='Delete(" . $value['id'] . ");' class='btn btn-danger'>Excluir</button>"
                 ];
             }
             
@@ -114,6 +116,65 @@ class cliente extends Base
             return $response
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(200);
+        }
+    }
+        public function delete($request, $response)
+    {
+        try {
+            $id = $_POST['id'];
+            $IsDelete = DeleteQuery::table('cliente')
+                ->where('id', '=', $id)
+                ->delete();
+
+            if (!$IsDelete) {
+                echo json_encode(['status' => false, 'msg' => $IsDelete, 'id' => $id]);
+                die;
+            }
+            echo json_encode(['status' => true, 'msg' => 'Removido com sucesso!', 'id' => $id]);
+            die;
+        } catch (\Throwable $th) {
+            echo "Erro: " . $th->getMessage();
+            die;
+        }
+    }
+    public function update($request, $response)
+    {
+        try {
+            $form = $request->getParsedBody();
+            $id = $form['id'];
+            $FieldAndValues = [
+                'nome' => $form['nome_fantasia'],
+                'sobrenome' => $form['sobrenome_razao'],
+                'cpf' => $form['cpf_cnpj'],
+                'rg' => $form['rg_ie'],
+                'senha' => password_hash($form['senha'], PASSWORD_DEFAULT),
+                #'ativo' => (isset($form['ativo']) and $form['ativo'] === 'true') ? true : false,
+                #'administrador' => (isset($form['administrador']) and $form['administrador'] === 'true') ? true : false
+            ];
+            $IsUpdate = UpdateQuery::table('cliente')->set($FieldAndValues)->where('id', '=', $id)->update();
+            if (!$IsUpdate) {
+                $data = [
+                    'status' => false,
+                    'msg' => 'Restrição: ' . $$IsUpdate,
+                    'id' => 0
+                ];
+                $payload = json_encode($data);
+                $response->getBody()->write($payload);
+                return $response
+                    ->withHeader('Content-Type', 'application/json')
+                    ->withStatus(200);
+            }
+            $data = [
+                'status' => true,
+                'msg' => 'Dados alterados com sucesso! ',
+                'id' => $id
+            ];
+            $payload = json_encode($data);
+            $response->getBody()->write($payload);
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(200);
+        } catch (\Exception $e) {
         }
     }
     public function insert($request, $response)
