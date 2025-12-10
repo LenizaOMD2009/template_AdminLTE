@@ -1,0 +1,108 @@
+import { Validate } from "./Validate.js";
+import { Requests } from "./Requests.js";
+
+const preCadastro = document.getElementById('preCadastro');
+const Login = document.getElementById('entrar');
+
+function applyMask(selector, mask) {
+    try {
+        // robinherbots/inputmask (jquery plugin)
+        if (typeof window.$ !== 'undefined' && window.$.fn && typeof window.$.fn.inputmask === 'function') {
+            window.$(selector).inputmask({ mask: Array.isArray(mask) ? mask : [mask] });
+            return;
+        }
+
+        // standalone Inputmask
+        if (typeof window.Inputmask !== 'undefined') {
+            const m = Array.isArray(mask) ? mask[0] : mask;
+            window.Inputmask({ mask: m }).mask(document.querySelectorAll(selector));
+            return;
+        }
+
+        // jQuery Mask Plugin (uses .mask)
+        if (typeof window.$ !== 'undefined' && window.$.fn && typeof window.$.fn.mask === 'function') {
+            const m = Array.isArray(mask) ? mask[0].replace(/9/g, '0') : mask.replace(/9/g, '0');
+            window.$(selector).mask(m);
+            return;
+        }
+
+        console.warn('Nenhum plugin de máscara disponível para', selector);
+    } catch (e) {
+        console.error('Erro aplicando máscara em', selector, e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyMask('#cpf', '999.999.999-99');
+    applyMask('#celular', '(99) 99999-9999');
+    applyMask('#whatsapp', '(99) 99999-9999');
+
+    if (preCadastro) {
+        preCadastro.addEventListener('click', async () => {
+            try {
+                const response = await Requests.SetForm('form').Post('/login/precadastro');
+                if (!response.status) {
+                    Swal.fire({
+                        title: "Atenção!",
+                        text: response.msg,
+                        icon: "error",
+                        timer: 3000
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: "Sucesso!",
+                    text: response.msg,
+                    icon: "success",
+                    timer: 3000
+                });
+
+                // Fechar modal via Bootstrap
+                const modalEl = document.getElementById('pre-cadastro');
+                if (modalEl && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                    const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+                    modal.hide();
+                } else if (window.$) {
+                    window.$('#pre-cadastro').modal('hide');
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        });
+    }
+});
+
+
+// end DOMContentLoaded handler
+const form = document.getElementById('form');
+
+if (Login) {
+    Login.addEventListener('click', async () => {
+        try {
+            const response = await Requests.SetForm('form').Post('/login/autenticar');
+            if (!response.status) {
+                Swal.fire({
+                    title: "Atenção!",
+                    text: response.msg,
+                    icon: "error",
+                    timer: 3000
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: "Sucesso!",
+                text: response.msg,
+                icon: "success",
+                timer: 2000
+            }).then(() => {
+                window.location.href = '/';
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    });
+} else {
+    console.warn('Formulário de login não encontrado: #form');
+}

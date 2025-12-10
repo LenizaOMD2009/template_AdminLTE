@@ -1,0 +1,98 @@
+{% extends "main.html" %}
+{% block main %}
+<div class="container">
+    <form id="form">
+        <!-- Define a ação a ser executada C = cadastro, E = Editar -->
+        <input type="hidden" id="acao" name="acao" value="{{ acao }}">
+        <input type="hidden" id="id" name="id" value="{{id}}">
+        <ul class="nav nav-tabs mt-2" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#perfil"
+                    type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">
+                    Perfil
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#endereco" type="button"
+                    role="tab" aria-controls="profile-tab-pane" aria-selected="false">Endereço</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contato" type="button"
+                    role="tab" aria-controls="contact-tab-pane" aria-selected="false">Contato</button>
+            </li>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="perfil" role="tabpanel" aria-labelledby="perfil-tab"
+                tabindex="0">
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="nome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="nome" name="nome" placeholder="Digite seu nome."
+                            required autofocus value="{{usuario.nome}}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="sobrenome" class="form-label">Sobre nome</label>
+                        <input type="text" class="form-control" id="sobrenome" name="sobrenome"
+                            placeholder="Por favor digite seu sobre nome" required value="{{usuario.sobrenome}}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cpf" class="form-label">CPF</label>
+                        <input type="text" class="form-control" id="cpf" name="cpf"
+                            placeholder="Por favor digite seu CPF" required value="{{usuario.cpf}}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="rg" class="form-label">RG</label>
+                        <input type="text" class="form-control" id="rg" name="rg" placeholder="Por favor digite seu RG"
+                            required value="{{usuario.rg}}">
+                    </div>
+                    <div class="col-md-4" id="campo_senha">
+                        <label for="senha" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="senha" name="senha"
+                            placeholder="Por favor digite sua senha" required>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="ativo" name="ativo"
+                                value="true">
+                            <label class="form-check-label" for="ativo">
+                                Ativo?
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="administrador"
+                                name="administrador" value="true">
+                            <label class="form-check-label" for="administrador">
+                                Administrador?
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <button class="btn btn-success" type="button" id="insert">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-header">
+                    <a href="/usuario/lista" class="btn btn-outline-warning">Voltar</a>
+            </div>
+
+            <div class="tab-pane fade" id="endereco" role="tabpanel" aria-labelledby="endereco-tab" tabindex="0">
+                <h1>Dados do endereço</h1>
+            </div>
+            <div class="tab-pane fade" id="contato" role="tabpanel" aria-labelledby="contato-tab" tabindex="0">
+                <h1>Dados de contato</h1>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+{% include "script.html" %}
+<script defer type="module" src="/js/user.js"></script>
+{% endblock %}

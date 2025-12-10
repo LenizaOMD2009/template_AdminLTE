@@ -1,0 +1,19 @@
+{
+    "name": "root/nginx",
+    "autoload": {
+        "psr-4": {
+            "app\\": "app/"
+        }
+    }, 
+    "authors": [
+        {
+            "name": "Leniza Mendes",
+            "email": "lenizaomnd@gmail.com"
+        }
+    ],
+    "require": {
+        "slim/slim": "^4.15",
+        "slim/psr7": "^1.7",
+        "slim/twig-view": "^3.4"
+    }
+}
