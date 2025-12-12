@@ -146,4 +146,45 @@ class Login extends Base
             return $this->SendJson($response, ['status' => false, 'msg' => 'Restrição:' . $e->getMessage(), 'id' => 0], 500);
         }
     }
+
+    public function recuperar($request, $response)
+    {
+        try {
+            $form = $request->getParsedBody();
+
+            if (!isset($form['identificador']) || empty(trim($form['identificador']))) {
+                return $this->SendJson($response, ['status' => false, 'msg' => 'O campo identificador é obrigatório!', 'id' => 0], 403);
+            }
+
+            if (!isset($form['senha']) || empty($form['senha'])) {
+                return $this->SendJson($response, ['status' => false, 'msg' => 'O campo senha é obrigatório!', 'id' => 0], 403);
+            }
+
+            $identificador = trim($form['identificador']);
+
+            $user = SelectQuery::select()
+                ->from('vw_usuario_contatos')
+                ->where('cpf', '=', $identificador, 'or')
+                ->where('email', '=', $identificador, 'or')
+                ->where('celular', '=', $identificador, 'or')
+                ->where('whatsapp', '=', $identificador)
+                ->fetch();
+
+            if (!isset($user) || empty($user) || count($user) <= 0) {
+                return $this->SendJson($response, ['status' => false, 'msg' => 'Identificador não encontrado!', 'id' => 0], 404);
+            }
+
+            $novaSenhaHash = password_hash($form['senha'], PASSWORD_DEFAULT);
+
+            $updated = UpdateQuery::table('usuario')->set(['senha' => $novaSenhaHash])->where('id', '=', $user['id'])->update();
+
+            if (!$updated) {
+                return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao atualizar a senha!', 'id' => $user['id']], 500);
+            }
+
+            return $this->SendJson($response, ['status' => true, 'msg' => 'Senha atualizada com sucesso!', 'id' => $user['id']], 200);
+        } catch (\Exception $e) {
+            return $this->SendJson($response, ['status' => false, 'msg' => 'Restrição:' . $e->getMessage(), 'id' => 0], 500);
+        }
+    }
 }

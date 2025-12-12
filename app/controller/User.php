@@ -158,19 +158,41 @@ class User extends Base
     {
         try {
             $id = $_POST['id'];
+            
+            // Primeiro, deleta registros relacionados em contato
+            try {
+                DeleteQuery::table('contato')
+                    ->where('id_usuario', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Depois, deleta registros relacionados em endereco
+            try {
+                DeleteQuery::table('endereco')
+                    ->where('id_usuario', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Finalmente, deleta o usuário
             $IsDelete = DeleteQuery::table('usuario')
                 ->where('id', '=', $id)
                 ->delete();
 
             if (!$IsDelete) {
-                echo json_encode(['status' => false, 'msg' => $IsDelete, 'id' => $id]);
-                die;
+                $data = ['status' => false, 'msg' => 'Erro ao deletar usuário', 'id' => $id];
+                return $this->SendJson($response, $data, 200);
             }
-            echo json_encode(['status' => true, 'msg' => 'Removido com sucesso!', 'id' => $id]);
-            die;
+            
+            $data = ['status' => true, 'msg' => 'Usuário removido com sucesso!', 'id' => $id];
+            return $this->SendJson($response, $data, 200);
+            
         } catch (\Throwable $th) {
-            echo "Erro: " . $th->getMessage();
-            die;
+            $data = ['status' => false, 'msg' => 'Erro: ' . $th->getMessage(), 'id' => $_POST['id'] ?? 0];
+            return $this->SendJson($response, $data, 500);
         }
     }
     public function update($request, $response)

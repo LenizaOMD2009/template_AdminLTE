@@ -4,7 +4,6 @@ namespace app\controller;
 
 use app\database\builder\DeleteQuery;
 use app\database\builder\SelectQuery;
-
 use app\database\builder\InsertQuery;
 use app\database\builder\UpdateQuery;
 
@@ -24,7 +23,10 @@ class cliente extends Base
     public function cadastro($request, $response)
     {
         $dadosTemplate = [
-            'titulo' => 'Cadastro de cliente'
+            'titulo' => 'Cadastro de cliente',
+            'acao' => 'c',
+            'id' => '',
+            'cliente' => []
         ];
         return $this->getTwig()
             ->render($response, $this->setView('cliente'), $dadosTemplate)
@@ -118,23 +120,60 @@ class cliente extends Base
                 ->withStatus(200);
         }
     }
-        public function delete($request, $response)
+      public function alterar($request, $response, $args)
+    {
+        $id = $args['id'];
+        $user = SelectQuery::select()->from('cliente')->where('id', '=', $id)->fetch();
+        $dadosTemplate = [
+            'acao' => 'e',
+            'id' => $id,
+            'titulo' => 'Cadastro e alteracao de cliente',
+            'cliente' => $user
+        ];
+        return $this->getTwig()
+            ->render($response, $this->setView('cliente'), $dadosTemplate)
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus(200);
+    }
+    public function delete($request, $response)
     {
         try {
             $id = $_POST['id'];
+            
+            // Primeiro, deleta registros relacionados em contato
+            try {
+                DeleteQuery::table('contato')
+                    ->where('id_cliente', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Depois, deleta registros relacionados em endereco
+            try {
+                DeleteQuery::table('endereco')
+                    ->where('id_cliente', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Finalmente, deleta o usuário
             $IsDelete = DeleteQuery::table('cliente')
                 ->where('id', '=', $id)
                 ->delete();
 
             if (!$IsDelete) {
-                echo json_encode(['status' => false, 'msg' => $IsDelete, 'id' => $id]);
-                die;
+                $data = ['status' => false, 'msg' => 'Erro ao deletar cliente', 'id' => $id];
+                return $this->SendJson($response, $data, 200);
             }
-            echo json_encode(['status' => true, 'msg' => 'Removido com sucesso!', 'id' => $id]);
-            die;
+            
+            $data = ['status' => true, 'msg' => 'Cliente removido com sucesso!', 'id' => $id];
+            return $this->SendJson($response, $data, 200);
+            
         } catch (\Throwable $th) {
-            echo "Erro: " . $th->getMessage();
-            die;
+            $data = ['status' => false, 'msg' => 'Erro: ' . $th->getMessage(), 'id' => $_POST['id'] ?? 0];
+            return $this->SendJson($response, $data, 500);
         }
     }
     public function update($request, $response)
@@ -143,66 +182,60 @@ class cliente extends Base
             $form = $request->getParsedBody();
             $id = $form['id'];
             $FieldAndValues = [
-                'nome' => $form['nome_fantasia'],
-                'sobrenome' => $form['sobrenome_razao'],
-                'cpf' => $form['cpf_cnpj'],
-                'rg' => $form['rg_ie'],
-                'senha' => password_hash($form['senha'], PASSWORD_DEFAULT),
-                #'ativo' => (isset($form['ativo']) and $form['ativo'] === 'true') ? true : false,
-                #'administrador' => (isset($form['administrador']) and $form['administrador'] === 'true') ? true : false
+                'nome_fantasia' => $form['nome_fantasia'],
+                'sobrenome_razao' => $form['sobrenome_razao'],
+                'cpf_cnpj' => $form['cpf_cnpj'],
+                'rg_ie' => $form['rg_ie'],
+                'data_nascimento_abertura' => $form['data_nascimento_abertura']
             ];
             $IsUpdate = UpdateQuery::table('cliente')->set($FieldAndValues)->where('id', '=', $id)->update();
             if (!$IsUpdate) {
                 $data = [
                     'status' => false,
-                    'msg' => 'Restrição: ' . $$IsUpdate,
+                    'msg' => 'Erro ao atualizar cliente',
                     'id' => 0
                 ];
-                $payload = json_encode($data);
-                $response->getBody()->write($payload);
-                return $response
-                    ->withHeader('Content-Type', 'application/json')
-                    ->withStatus(200);
+                return $this->SendJson($response, $data, 200);
             }
             $data = [
                 'status' => true,
-                'msg' => 'Dados alterados com sucesso! ',
+                'msg' => 'Dados alterados com sucesso!',
                 'id' => $id
             ];
-            $payload = json_encode($data);
-            $response->getBody()->write($payload);
-            return $response
-                ->withHeader('Content-Type', 'application/json')
-                ->withStatus(200);
+            return $this->SendJson($response, $data, 200);
         } catch (\Exception $e) {
+            $data = ['status' => false, 'msg' => 'Exceção: ' . $e->getMessage(), 'id' => 0];
+            return $this->SendJson($response, $data, 500);
         }
     }
     public function insert($request, $response)
     {
         try {
-            $nome_fantasia = $_POST['nome_fantasia'];
-            $sobrenome_razao = $_POST['sobrenome_razao'];
-            $cpf_cnpj = $_POST['cpf_cnpj'];
-            $rg_ie = $_POST['rg_ie'];
-            $data_nascimento_abertura = $_POST['data_nascimento_abertura'];
+            $form = $request->getParsedBody();
             $FieldsAndValues = [
-                'nome_fantasia' => $nome_fantasia,
-                'sobrenome_razao' => $sobrenome_razao,
-                'cpf_cnpj' => $cpf_cnpj,
-                'rg_ie' => $rg_ie,
-                'data_nascimento_abertura' => $data_nascimento_abertura
+                'nome_fantasia' => $form['nome_fantasia'] ?? null,
+                'sobrenome_razao' => $form['sobrenome_razao'] ?? null,
+                'cpf_cnpj' => $form['cpf_cnpj'] ?? null,
+                'rg_ie' => $form['rg_ie'] ?? null,
+                'data_nascimento_abertura' => $form['data_nascimento_abertura'] ?? null
             ];
             $IsSave = InsertQuery::table('cliente')->save($FieldsAndValues);
 
             if (!$IsSave) {
-                echo 'Erro ao salvar';
-                die;
+                $data = ['status' => false, 'msg' => 'Erro ao inserir cliente', 'id' => 0];
+                return $this->SendJson($response, $data, 200);
             }
-            echo "Salvo com sucesso!";
-            die;
+            
+            $id = SelectQuery::select('id')->from('cliente')->order('id', 'desc')->fetch();
+            $data = [
+                'status' => true,
+                'msg' => 'Cliente cadastrado com sucesso!',
+                'id' => $id['id'] ?? 0
+            ];
+            return $this->SendJson($response, $data, 200);
         } catch (\Throwable $th) {
-            echo "Erro: " . $th->getMessage();
-            die;
+            $data = ['status' => false, 'msg' => 'Exceção: ' . $th->getMessage(), 'id' => 0];
+            return $this->SendJson($response, $data, 500);
         }
     }
 }
