@@ -19,5 +19,40 @@ const tabela = new $('#tabela').DataTable({
         type: 'POST'
     }
 });
-
-//DataTables.SetId('tabela').Post('/user/listuser');
+async function Delete(id) {
+    const formData = new FormData();
+    formData.append('id', id);
+    
+    const response = await fetch('/empresas/delete', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (!data.status) {
+        Swal.fire({
+            title: "Erro ao remover!",
+            icon: "error",
+            html: data.msg,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        return;
+    }
+    Swal.fire({
+        title: "Removido com sucesso!",
+        icon: "success",
+        html: data.msg,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    tabela.ajax.reload();
+}
+window.Delete = Delete;

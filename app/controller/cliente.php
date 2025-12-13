@@ -64,6 +64,9 @@ class cliente extends Base
             
             $query = SelectQuery::select('id,nome_fantasia,sobrenome_razao,cpf_cnpj,rg_ie,data_nascimento_abertura')->from('cliente');
             
+            $queryTotal = SelectQuery::select('COUNT(*) as total')->from('cliente');
+            $totalRecords = $queryTotal->fetch()['total'] ?? 0;
+            
             if (!is_null($term) && ($term !== '')) {
                 $query->where('cliente.nome_fantasia', 'ilike', "%{$term}%", 'or')
                     ->where('cliente.sobrenome_razao', 'ilike', "%{$term}%", 'or')
@@ -71,7 +74,15 @@ class cliente extends Base
                     ->where('cliente.rg_ie', 'ilike', "%{$term}%", 'or')
                     ->whereRaw("to_char(cliente.data_nascimento_abertura, 'YYYY-MM-DD') ILIKE '%{$term}%'");
 
-
+                $queryFiltered = SelectQuery::select('COUNT(*) as total')->from('cliente')
+                    ->where('cliente.nome_fantasia', 'ilike', "%{$term}%", 'or')
+                    ->where('cliente.sobrenome_razao', 'ilike', "%{$term}%", 'or')
+                    ->where('cliente.cpf_cnpj', 'ilike', "%{$term}%", 'or')
+                    ->where('cliente.rg_ie', 'ilike', "%{$term}%", 'or')
+                    ->whereRaw("to_char(cliente.data_nascimento_abertura, 'YYYY-MM-DD') ILIKE '%{$term}%'");
+                $totalFiltered = $queryFiltered->fetch()['total'] ?? 0;
+            } else {
+                $totalFiltered = $totalRecords;
             }
 
             $users = $query
@@ -95,8 +106,8 @@ class cliente extends Base
             
             $data = [
                 'draw' => $form['draw'] ?? 1,
-                'recordsTotal' => count($users),
-                'recordsFiltered' => count($users),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalFiltered,
                 'data' => $userData
             ];
             

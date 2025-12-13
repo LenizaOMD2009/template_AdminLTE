@@ -2,11 +2,12 @@
 
 namespace app\controller;
 
+use app\database\builder\DeleteQuery;
 use app\database\builder\SelectQuery;
 use app\database\builder\InsertQuery;
-use app\database\builder\DeleteQuery;
+use app\database\builder\UpdateQuery;
 
-class fornecedor extends Base
+class Fornecedor extends Base
 {
 
     public function lista($request, $response)
@@ -22,7 +23,10 @@ class fornecedor extends Base
     public function cadastro($request, $response)
     {
         $dadosTemplate = [
-            'titulo' => 'Cadastro de fornecedor'
+            'titulo' => 'Cadastro de fornecedor',
+            'acao' => 'c',
+            'id' => '',
+            'fornecedor' => []
         ];
         return $this->getTwig()
             ->render($response, $this->setView('fornecedor'), $dadosTemplate)
@@ -60,6 +64,9 @@ class fornecedor extends Base
             
             $query = SelectQuery::select('id,nome_fantasia,sobrenome_razao,cpf_cnpj,rg_ie,data_nascimento_abertura')->from('fornecedor');
             
+            $queryTotal = SelectQuery::select('COUNT(*) as total')->from('fornecedor');
+            $totalRecords = $queryTotal->fetch()['total'] ?? 0;
+            
             if (!is_null($term) && ($term !== '')) {
                 $query->where('fornecedor.nome_fantasia', 'ilike', "%{$term}%", 'or')
                     ->where('fornecedor.sobrenome_razao', 'ilike', "%{$term}%", 'or')
@@ -67,12 +74,21 @@ class fornecedor extends Base
                     ->where('fornecedor.rg_ie', 'ilike', "%{$term}%", 'or')
                     ->whereRaw("to_char(fornecedor.data_nascimento_abertura, 'YYYY-MM-DD') ILIKE '%{$term}%'");
 
-
+                $queryFiltered = SelectQuery::select('COUNT(*) as total')->from('fornecedor')
+                    ->where('fornecedor.nome_fantasia', 'ilike', "%{$term}%", 'or')
+                    ->where('fornecedor.sobrenome_razao', 'ilike', "%{$term}%", 'or')
+                    ->where('fornecedor.cpf_cnpj', 'ilike', "%{$term}%", 'or')
+                    ->where('fornecedor.rg_ie', 'ilike', "%{$term}%", 'or')
+                    ->whereRaw("to_char(fornecedor.data_nascimento_abertura, 'YYYY-MM-DD') ILIKE '%{$term}%'");
+                $totalFiltered = $queryFiltered->fetch()['total'] ?? 0;
+            } else {
+                $totalFiltered = $totalRecords;
             }
+
             $users = $query
-            ->order($orderField, $orderType)
-            ->limit($length, $start)
-            ->fetchAll();
+                ->order($orderField, $orderType)
+                ->limit($length, $start)
+                ->fetchAll();
             
             $userData = [];
             foreach ($users as $key => $value) {
@@ -83,15 +99,15 @@ class fornecedor extends Base
                     $value['cpf_cnpj'],
                     $value['rg_ie'],
                     $value['data_nascimento_abertura'],
-                    "<button class='btn btn-warning'>Editar</button>
-                    <button type='button' onclick='Delete(" . $value['id'] . ");' class='btn btn-danger'>Excluir</button>"
+                    "<a href='/fornecedor/alterar/{$value['id']}' class='btn btn-warning'>Editar</a>
+                    <button type='button'  onclick='Delete(" . $value['id'] . ");' class='btn btn-danger'>Excluir</button>"
                 ];
             }
             
             $data = [
                 'draw' => $form['draw'] ?? 1,
-                'recordsTotal' => count($users),
-                'recordsFiltered' => count($users),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalFiltered,
                 'data' => $userData
             ];
             
@@ -115,51 +131,122 @@ class fornecedor extends Base
                 ->withStatus(200);
         }
     }
-    public function insert($request, $response)
+      public function alterar($request, $response, $args)
     {
-        try {
-            $nome_fantasia = $_POST['nome_fantasia'];
-            $sobrenome_razao = $_POST['sobrenome_razao'];
-            $cpf_cnpj = $_POST['cpf_cnpj'];
-            $rg_ie = $_POST['rg_ie'];
-            $data_nascimento_abertura = $_POST['data_nascimento_abertura'];
-            $FieldsAndValues = [
-                'nome_fantasia' => $nome_fantasia,
-                'sobrenome_razao' => $sobrenome_razao,
-                'cpf_cnpj' => $cpf_cnpj,
-                'rg_ie' => $rg_ie,
-                'data_nascimento_abertura' => $data_nascimento_abertura
-            ];
-            $IsSave = InsertQuery::table('fornecedor')->save($FieldsAndValues);
-
-            if (!$IsSave) {
-                echo 'Erro ao salvar';
-                die;
-            }
-            echo "Salvo com sucesso!";
-            die;
-        } catch (\Throwable $th) {
-            echo "Erro: " . $th->getMessage();
-            die;
-        }
+        $id = $args['id'];
+        $user = SelectQuery::select()->from('fornecedor')->where('id', '=', $id)->fetch();
+        $dadosTemplate = [
+            'acao' => 'e',
+            'id' => $id,
+            'titulo' => 'Cadastro e alteracao de fornecedor',
+            'fornecedor' => $user
+        ];
+        return $this->getTwig()
+            ->render($response, $this->setView('fornecedor'), $dadosTemplate)
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus(200);
     }
-     public function delete($request, $response)
+    public function delete($request, $response)
     {
         try {
             $id = $_POST['id'];
+            
+            // Primeiro, deleta registros relacionados em contato
+            try {
+                DeleteQuery::table('contato')
+                    ->where('id_fornecedor', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Depois, deleta registros relacionados em endereco
+            try {
+                DeleteQuery::table('endereco')
+                    ->where('id_fornecedor', '=', $id)
+                    ->delete();
+            } catch (\Exception $e) {
+                // Log ou ignore se não houver registros
+            }
+
+            // Finalmente, deleta o usuário
             $IsDelete = DeleteQuery::table('fornecedor')
                 ->where('id', '=', $id)
                 ->delete();
 
             if (!$IsDelete) {
-                echo json_encode(['status' => false, 'msg' => $IsDelete, 'id' => $id]);
-                die;
+                $data = ['status' => false, 'msg' => 'Erro ao deletar fornecedor', 'id' => $id];
+                return $this->SendJson($response, $data, 200);
             }
-            echo json_encode(['status' => true, 'msg' => 'Removido com sucesso!', 'id' => $id]);
-            die;
+            
+            $data = ['status' => true, 'msg' => 'fornecedor removido com sucesso!', 'id' => $id];
+            return $this->SendJson($response, $data, 200);
+            
         } catch (\Throwable $th) {
-            echo "Erro: " . $th->getMessage();
-            die;
+            $data = ['status' => false, 'msg' => 'Erro: ' . $th->getMessage(), 'id' => $_POST['id'] ?? 0];
+            return $this->SendJson($response, $data, 500);
+        }
+    }
+    public function update($request, $response)
+    {
+        try {
+            $form = $request->getParsedBody();
+            $id = $form['id'];
+            $FieldAndValues = [
+                'nome_fantasia' => $form['nome_fantasia'],
+                'sobrenome_razao' => $form['sobrenome_razao'],
+                'cpf_cnpj' => $form['cpf_cnpj'],
+                'rg_ie' => $form['rg_ie'],
+                'data_nascimento_abertura' => $form['data_nascimento_abertura']
+            ];
+            $IsUpdate = UpdateQuery::table('fornecedor')->set($FieldAndValues)->where('id', '=', $id)->update();
+            if (!$IsUpdate) {
+                $data = [
+                    'status' => false,
+                    'msg' => 'Erro ao atualizar fornecedor',
+                    'id' => 0
+                ];
+                return $this->SendJson($response, $data, 200);
+            }
+            $data = [
+                'status' => true,
+                'msg' => 'Dados alterados com sucesso!',
+                'id' => $id
+            ];
+            return $this->SendJson($response, $data, 200);
+        } catch (\Exception $e) {
+            $data = ['status' => false, 'msg' => 'Exceção: ' . $e->getMessage(), 'id' => 0];
+            return $this->SendJson($response, $data, 500);
+        }
+    }
+    public function insert($request, $response)
+    {
+        try {
+            $form = $request->getParsedBody();
+            $FieldsAndValues = [
+                'nome_fantasia' => $form['nome_fantasia'] ?? null,
+                'sobrenome_razao' => $form['sobrenome_razao'] ?? null,
+                'cpf_cnpj' => $form['cpf_cnpj'] ?? null,
+                'rg_ie' => $form['rg_ie'] ?? null,
+                'data_nascimento_abertura' => $form['data_nascimento_abertura'] ?? null
+            ];
+            $IsSave = InsertQuery::table('fornecedor')->save($FieldsAndValues);
+
+            if (!$IsSave) {
+                $data = ['status' => false, 'msg' => 'Erro ao inserir fornecedor', 'id' => 0];
+                return $this->SendJson($response, $data, 200);
+            }
+            
+            $id = SelectQuery::select('id')->from('fornecedor')->order('id', 'desc')->fetch();
+            $data = [
+                'status' => true,
+                'msg' => 'fornecedor cadastrado com sucesso!',
+                'id' => $id['id'] ?? 0
+            ];
+            return $this->SendJson($response, $data, 200);
+        } catch (\Throwable $th) {
+            $data = ['status' => false, 'msg' => 'Exceção: ' . $th->getMessage(), 'id' => 0];
+            return $this->SendJson($response, $data, 500);
         }
     }
 }

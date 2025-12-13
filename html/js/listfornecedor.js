@@ -1,5 +1,3 @@
-
-import { Requests } from "./Requests.js";
 const tabela = new $('#tabela').DataTable({
     paging: true,
     lengthChange: true,
@@ -22,13 +20,21 @@ const tabela = new $('#tabela').DataTable({
     }
 });
 async function Delete(id) {
-    document.getElementById('id').value = id;
-    const response = await Requests.SetForm('form').Post('/fornecedor/delete');
-    if (!response.status) {
+    const formData = new FormData();
+    formData.append('id', id);
+    
+    const response = await fetch('/fornecedor/delete', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (!data.status) {
         Swal.fire({
             title: "Erro ao remover!",
             icon: "error",
-            html: response.msg,
+            html: data.msg,
             timer: 3000,
             timerProgressBar: true,
             didOpen: () => {
@@ -40,7 +46,7 @@ async function Delete(id) {
     Swal.fire({
         title: "Removido com sucesso!",
         icon: "success",
-        html: response.msg,
+        html: data.msg,
         timer: 3000,
         timerProgressBar: true,
         didOpen: () => {
@@ -50,3 +56,4 @@ async function Delete(id) {
     tabela.ajax.reload();
 }
 window.Delete = Delete;
+//DataTables.SetId('tabela').Post('/user/listuser');
