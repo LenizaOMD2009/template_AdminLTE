@@ -12,10 +12,10 @@ define('DIR_VIEW', ROOT . '/app/view');
 define('HOME', $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']);
 #Configurações E-mail
 define('CONFIG_SMTP_EMAIL',[
-    'host' => 'smtp.example.com',
+    'host' => 'sandbox.smtp.mailtrap.io',
     'port' => 587,
-    'user' => 'noreplay@mkt.fanorte.edu.br',
-    'pass' => '@w906083W@',
-    'from_name' => 'Mercantor',
-    'from_email' => 'noreplay@mkt.fanorte.edu.br',
+    'user' => 'ca8d7cd0ab983f',
+    'pass' => '96f0c46048e0d6',
+    'from_name' => 'Admin LTE',
+    'from_email' => 'noreply@adminlte.com',
     ]);

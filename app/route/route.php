@@ -22,6 +22,8 @@ $app->group('/login', function (RouteCollectorProxy $group) {
     $group->post('/precadastro', Login::class . ':precadastro');
     $group->post('/autenticar', Login::class . ':autenticar');
     $group->post('/recuperar', Login::class . ':recuperar');
+    $group->post('/verificarCodigo', Login::class . ':verificarCodigo');
+    $group->post('/atualizarSenha', Login::class . ':atualizarSenha');
 });
 
 $app->group('/usuario', function (RouteCollectorProxy $group) {

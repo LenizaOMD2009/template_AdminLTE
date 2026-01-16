@@ -117,21 +117,25 @@ if (recuperarBtn) {
             const identificador = (document.getElementById('identificador') || {}).value || '';
             const senha = (document.getElementById('senharec') || {}).value || '';
             const senhaConfirm = (document.getElementById('senharecconfirm') || {}).value || '';
+            const msgErro = document.getElementById('msgErroEtapa1');
 
             if (!identificador.trim()) {
-                Swal.fire({ title: 'Atenção!', text: 'Informe o identificador.', icon: 'warning' });
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = 'Informe o identificador.';
                 return;
             }
             if (!senha) {
-                Swal.fire({ title: 'Atenção!', text: 'Informe a nova senha.', icon: 'warning' });
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = 'Informe a nova senha.';
                 return;
             }
             if (senha !== senhaConfirm) {
-                Swal.fire({ title: 'Atenção!', text: 'As senhas não conferem.', icon: 'warning' });
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = 'As senhas não conferem.';
                 return;
             }
 
-            const body = new URLSearchParams({ identificador: identificador.trim(), senha });
+            const body = new URLSearchParams({ identificador: identificador.trim() });
 
             const option = {
                 method: 'POST',
@@ -147,23 +151,138 @@ if (recuperarBtn) {
             const json = await resp.json();
 
             if (!json || !json.status) {
-                Swal.fire({ title: 'Erro', text: (json && json.msg) ? json.msg : 'Erro ao recuperar senha.', icon: 'error' });
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = (json && json.msg) ? json.msg : 'Erro ao recuperar senha.';
                 return;
             }
 
-            Swal.fire({ title: 'Sucesso!', text: json.msg, icon: 'success', timer: 2000 });
+            // Armazenar dados na sessão do navegador
+            sessionStorage.setItem('recupSenha', JSON.stringify({
+                identificador: identificador.trim(),
+                senha: senha
+            }));
 
-            // Fecha o modal
-            const modalEl = document.getElementById('recuperarsenha');
-            if (modalEl && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
-                const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
-                modal.hide();
-            } else if (window.$) {
-                window.$('#recuperarsenha').modal('hide');
-            }
+            // Ir para etapa 2
+            document.getElementById('etapa1').classList.add('d-none');
+            document.getElementById('footerEtapa1').classList.add('d-none');
+            document.getElementById('etapa2').classList.remove('d-none');
+            document.getElementById('footerEtapa2').classList.remove('d-none');
+            document.getElementById('codigoVerificacao').focus();
+
+            Swal.fire({
+                title: 'Sucesso!',
+                text: json.msg,
+                icon: 'success',
+                timer: 2000
+            });
         } catch (error) {
             console.error(error);
             Swal.fire({ title: 'Erro', text: 'Ocorreu um erro inesperado.', icon: 'error' });
+        }
+    });
+}
+
+// Verificar código
+const verificarCodigoBtn = document.getElementById('verificarCodigo');
+
+if (verificarCodigoBtn) {
+    verificarCodigoBtn.addEventListener('click', async () => {
+        try {
+            const codigo = (document.getElementById('codigoVerificacao') || {}).value || '';
+            const msgErro = document.getElementById('msgErroEtapa2');
+
+            if (!codigo.trim()) {
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = 'Informe o código.';
+                return;
+            }
+
+            if (codigo.length !== 6 || isNaN(codigo)) {
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = 'O código deve ter 6 dígitos.';
+                return;
+            }
+
+            const body = new URLSearchParams({ codigo: codigo.trim() });
+
+            const option = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body,
+                credentials: 'same-origin'
+            };
+
+            const resp = await fetch('/login/verificarCodigo', option);
+            const json = await resp.json();
+
+            if (!json || !json.status) {
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = (json && json.msg) ? json.msg : 'Código inválido.';
+                return;
+            }
+
+            // Código verificado com sucesso - ir para etapa 3
+            const recupData = JSON.parse(sessionStorage.getItem('recupSenha'));
+
+            // Atualizar senha
+            const bodyAtualizar = new URLSearchParams({ senha: recupData.senha });
+
+            const optionAtualizar = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: bodyAtualizar,
+                credentials: 'same-origin'
+            };
+
+            const respAtualizar = await fetch('/login/atualizarSenha', optionAtualizar);
+            const jsonAtualizar = await respAtualizar.json();
+
+            if (!jsonAtualizar || !jsonAtualizar.status) {
+                msgErro.classList.remove('d-none');
+                msgErro.textContent = (jsonAtualizar && jsonAtualizar.msg) ? jsonAtualizar.msg : 'Erro ao atualizar senha.';
+                return;
+            }
+
+            // Limpar dados armazenados
+            sessionStorage.removeItem('recupSenha');
+
+            // Ir para etapa 3
+            document.getElementById('etapa2').classList.add('d-none');
+            document.getElementById('footerEtapa2').classList.add('d-none');
+            document.getElementById('etapa3').classList.remove('d-none');
+            document.getElementById('footerEtapa3').classList.remove('d-none');
+
+            // Redirecionar após 2 segundos
+            setTimeout(() => {
+                const modalEl = document.getElementById('recuperarsenha');
+                if (modalEl && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                    const modal = window.bootstrap.Modal.getInstance(modalEl) || new window.bootstrap.Modal(modalEl);
+                    modal.hide();
+                }
+                // Limpar inputs
+                document.getElementById('identificador').value = '';
+                document.getElementById('senharec').value = '';
+                document.getElementById('senharecconfirm').value = '';
+                document.getElementById('codigoVerificacao').value = '';
+                // Voltar para etapa 1
+                document.getElementById('etapa1').classList.remove('d-none');
+                document.getElementById('footerEtapa1').classList.remove('d-none');
+                document.getElementById('etapa3').classList.add('d-none');
+                document.getElementById('footerEtapa3').classList.add('d-none');
+                document.getElementById('msgErroEtapa1').classList.add('d-none');
+                document.getElementById('msgErroEtapa2').classList.add('d-none');
+            }, 2000);
+        } catch (error) {
+            console.error(error);
+            const msgErro = document.getElementById('msgErroEtapa2');
+            msgErro.classList.remove('d-none');
+            msgErro.textContent = 'Ocorreu um erro inesperado.';
         }
     });
 }

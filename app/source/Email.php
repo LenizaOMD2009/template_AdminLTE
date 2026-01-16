@@ -20,7 +20,7 @@ class Email
         $this->mail->Host = CONFIG_SMTP_EMAIL['host'];
         $this->mail->SMTPAuth = true;
         $this->mail->Username = CONFIG_SMTP_EMAIL['user'];
-        $this->mail->Password = CONFIG_SMTP_EMAIL['password'];
+        $this->mail->Password = CONFIG_SMTP_EMAIL['pass'];
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mail->Port = CONFIG_SMTP_EMAIL['port'];
     }

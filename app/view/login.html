@@ -143,21 +143,54 @@
                                 </div>
                                 <div class="card-body">
                                     <p class="text-muted mb-3">Dados com * são obrigatórios</p>
-                                    <div class="form-floating mb-3">
-                                        <input type="text" class="form-control" id="identificador" placeholder="">
-                                        <label for="identificador">Identificador *</label>
+                                    
+                                    <!-- ETAPA 1: Identificador -->
+                                    <div id="etapa1">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="identificador" placeholder="">
+                                            <label for="identificador">Email, CPF ou Telefone *</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="password" class="form-control" id="senharec" placeholder="">
+                                            <label for="senhaRec">Nova Senha *</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="password" class="form-control" id="senharecconfirm" placeholder="">
+                                            <label for="senhaRecConfirm">Confirmar Nova Senha *</label>
+                                        </div>
+                                        <div id="msgErroEtapa1" class="alert alert-danger d-none" role="alert"></div>
                                     </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="password" class="form-control" id="senharec" placeholder="">
-                                        <label for="senhaRec">Nova Senha *</label>
+
+                                    <!-- ETAPA 2: Código de Verificação -->
+                                    <div id="etapa2" class="d-none">
+                                        <div class="alert alert-info" role="alert">
+                                            Um código de 6 dígitos foi enviado para seu email!
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control text-center" id="codigoVerificacao" 
+                                                   placeholder="000000" maxlength="6" inputmode="numeric">
+                                            <label for="codigoVerificacao">Digite o código *</label>
+                                        </div>
+                                        <small class="text-muted">Código válido por 15 minutos</small>
+                                        <div id="msgErroEtapa2" class="alert alert-danger d-none mt-2" role="alert"></div>
                                     </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="password" class="form-control" id="senharecconfirm" placeholder="">
-                                        <label for="senhaRecConfirm">Confirmar Nova Senha *</label>
+
+                                    <!-- ETAPA 3: Confirmação -->
+                                    <div id="etapa3" class="d-none">
+                                        <div class="alert alert-success" role="alert">
+                                            ✓ Senha atualizada com sucesso!
+                                        </div>
+                                        <p class="text-muted">Você será redirecionado para login em breve...</p>
                                     </div>
                                 </div>
-                                <div class="card-footer">
-                                    <button type="button" id="recuperarEnviar" class="btn btn-primary">Enviar</button>
+                                <div class="card-footer" id="footerEtapa1">
+                                    <button type="button" id="recuperarEnviar" class="btn btn-primary">Enviar Código</button>
+                                </div>
+                                <div class="card-footer d-none" id="footerEtapa2">
+                                    <button type="button" id="verificarCodigo" class="btn btn-primary">Verificar Código</button>
+                                </div>
+                                <div class="card-footer d-none" id="footerEtapa3">
+                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Voltar ao Login</button>
                                 </div>
                             </div>
                         </div>
