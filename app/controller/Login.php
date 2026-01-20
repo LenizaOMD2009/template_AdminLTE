@@ -157,7 +157,6 @@ class Login extends Base
             if (!isset($form['identificador']) || empty(trim($form['identificador']))) {
                 return $this->SendJson($response, ['status' => false, 'msg' => 'O campo identificador é obrigatório!', 'id' => 0], 403);
             }
-
             $identificador = trim($form['identificador']);
 
             $user = SelectQuery::select()
@@ -167,35 +166,36 @@ class Login extends Base
                 ->where('celular', '=', $identificador, 'or')
                 ->where('whatsapp', '=', $identificador)
                 ->fetch();
-                if (!isset($user) || empty($user) || count($user) <= 0) {
-                    return $this->SendJson($response, ['status' => false, 'msg' => 'Identificador não encontrado!', 'id' => 0], 404);
-                    }
-                    
-                    // Gerar código de 6 dígitos
-                    $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                    
-                    // Armazenar código em sessão com timestamp
-                    $_SESSION['recuperacao_senha'] = [
-                        'id_usuario' => $user['id'],
-                        'codigo' => $codigo,
-                        'timestamp' => time(),
-                        'tentativas' => 0
-                        ];
-                        
-                        // Enviar email com o código
-                        try {
-                            $assunto = 'Código de recuperação de senha';
-                            $corpo = "<h3>Código de Recuperação de Senha</h3>";
-                            $corpo .= "<p>Olá, <strong>{$user['nome']} {$user['sobrenome']}</strong></p>";
-                            $corpo .= "<p>Seu código de recuperação é: <strong style='font-size: 24px; color: #007bff;'>{$codigo}</strong></p>";
-                            $corpo .= "<p>Este código expira em 15 minutos.</p>";
-                            $corpo .= "<p>Se você não solicitou isso, ignore este email.</p>";
-                            Email::add($assunto, $corpo, $user['nome'], $user['email'])->send();
-                            } catch (\Exception $e) {
-                                error_log('Erro ao enviar email de recuperação: ' . $e->getMessage());
-                                return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
-                                }
-                        
+            if (!isset($user) || empty($user) || count($user) <= 0) {
+                return $this->SendJson($response, ['status' => false, 'msg' => 'Identificador não encontrado!', 'id' => 0], 404);
+            }
+
+            // Gerar código de 6 dígitos
+            $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            // Armazenar código em sessão com timestamp
+            $_SESSION['recuperacao_senha'] = [
+                'id_usuario' => $user['id'],
+                'codigo' => $codigo,
+                'timestamp' => time(),
+                'tentativas' => 0
+            ];
+
+
+            // Enviar email com o código
+            try {
+                $assunto = 'Código de recuperação de senha';
+                $corpo = "<h3>Código de Recuperação de Senha</h3>";
+                $corpo .= "<p>Olá, <strong>{$user['nome']} {$user['sobrenome']}</strong></p>";
+                $corpo .= "<p>Seu código de recuperação é: <strong style='font-size: 24px; color: #007bff;'>{$codigo}</strong></p>";
+                $corpo .= "<p>Este código expira em 15 minutos.</p>";
+                $corpo .= "<p>Se você não solicitou isso, ignore este email.</p>";
+                Email::add($assunto, $corpo, $user['nome'], $user['email'])->send();
+            } catch (\Exception $e) {
+                error_log('Erro ao enviar email de recuperação: ' . $e->getMessage());
+                return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
+            }
+
             return $this->SendJson($response, ['status' => true, 'msg' => 'Código enviado para o email! Verifique sua caixa de entrada.', 'id' => $user['id']], 200);
         } catch (\Exception $e) {
             return $this->SendJson($response, ['status' => false, 'msg' => 'Restrição:' . $e->getMessage(), 'id' => 0], 500);
