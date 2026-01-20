@@ -150,6 +150,7 @@ class Login extends Base
 
     public function recuperar($request, $response)
     {
+
         try {
             $form = $request->getParsedBody();
 
@@ -166,14 +167,14 @@ class Login extends Base
                 ->where('celular', '=', $identificador, 'or')
                 ->where('whatsapp', '=', $identificador)
                 ->fetch();
-
+var_dump($user);die;
             if (!isset($user) || empty($user) || count($user) <= 0) {
                 return $this->SendJson($response, ['status' => false, 'msg' => 'Identificador não encontrado!', 'id' => 0], 404);
             }
 
             // Gerar código de 6 dígitos
             $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            
+
             // Armazenar código em sessão com timestamp
             $_SESSION['recuperacao_senha'] = [
                 'id_usuario' => $user['id'],
@@ -190,7 +191,6 @@ class Login extends Base
                 $corpo .= "<p>Seu código de recuperação é: <strong style='font-size: 24px; color: #007bff;'>{$codigo}</strong></p>";
                 $corpo .= "<p>Este código expira em 15 minutos.</p>";
                 $corpo .= "<p>Se você não solicitou isso, ignore este email.</p>";
-
                 Email::add($assunto, $corpo, $user['nome'], $user['email'])->send();
             } catch (\Exception $e) {
                 error_log('Erro ao enviar email de recuperação: ' . $e->getMessage());
