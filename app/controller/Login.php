@@ -150,7 +150,6 @@ class Login extends Base
 
     public function recuperar($request, $response)
     {
-
         try {
             $form = $request->getParsedBody();
 
@@ -166,6 +165,7 @@ class Login extends Base
                 ->where('celular', '=', $identificador, 'or')
                 ->where('whatsapp', '=', $identificador)
                 ->fetch();
+            
             if (!isset($user) || empty($user) || count($user) <= 0) {
                 return $this->SendJson($response, ['status' => false, 'msg' => 'Identificador não encontrado!', 'id' => 0], 404);
             }
@@ -173,14 +173,17 @@ class Login extends Base
             // Gerar código de 6 dígitos
             $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
+            // Determinar o email para onde enviar o código
+            $emailParaEnvio = $user['email'];
+
             // Armazenar código em sessão com timestamp
             $_SESSION['recuperacao_senha'] = [
                 'id_usuario' => $user['id'],
                 'codigo' => $codigo,
+                'email' => $emailParaEnvio,
                 'timestamp' => time(),
                 'tentativas' => 0
             ];
-
 
             // Enviar email com o código
             try {
@@ -190,7 +193,11 @@ class Login extends Base
                 $corpo .= "<p>Seu código de recuperação é: <strong style='font-size: 24px; color: #007bff;'>{$codigo}</strong></p>";
                 $corpo .= "<p>Este código expira em 15 minutos.</p>";
                 $corpo .= "<p>Se você não solicitou isso, ignore este email.</p>";
-                Email::add($assunto, $corpo, $user['nome'], $user['email'])->send();
+                
+                if (!Email::add($assunto, $corpo, $user['nome'], $emailParaEnvio)->send()) {
+                    error_log('Erro ao enviar email de recuperação');
+                    return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
+                }
             } catch (\Exception $e) {
                 error_log('Erro ao enviar email de recuperação: ' . $e->getMessage());
                 return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
@@ -198,7 +205,8 @@ class Login extends Base
 
             return $this->SendJson($response, ['status' => true, 'msg' => 'Código enviado para o email! Verifique sua caixa de entrada.', 'id' => $user['id']], 200);
         } catch (\Exception $e) {
-            return $this->SendJson($response, ['status' => false, 'msg' => 'Restrição:' . $e->getMessage(), 'id' => 0], 500);
+            error_log('Erro em recuperar: ' . $e->getMessage());
+            return $this->SendJson($response, ['status' => false, 'msg' => 'Restrição: ' . $e->getMessage(), 'id' => 0], 500);
         }
     }
 
