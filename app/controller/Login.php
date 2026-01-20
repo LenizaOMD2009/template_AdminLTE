@@ -176,16 +176,6 @@ class Login extends Base
             // Determinar o email para onde enviar o código
             $emailParaEnvio = $user['email'];
 
-            // Validar se o email existe
-            if (!isset($emailParaEnvio) || empty($emailParaEnvio)) {
-                return $this->SendJson($response, ['status' => false, 'msg' => 'Usuário não possui email cadastrado!', 'id' => 0], 403);
-            }
-
-            // Validar formato do email
-            if (!filter_var($emailParaEnvio, FILTER_VALIDATE_EMAIL)) {
-                return $this->SendJson($response, ['status' => false, 'msg' => 'Email inválido no cadastro!', 'id' => 0], 403);
-            }
-
             // Armazenar código em sessão com timestamp
             $_SESSION['recuperacao_senha'] = [
                 'id_usuario' => $user['id'],
@@ -205,12 +195,12 @@ class Login extends Base
                 $corpo .= "<p>Se você não solicitou isso, ignore este email.</p>";
                 
                 if (!Email::add($assunto, $corpo, $user['nome'], $emailParaEnvio)->send()) {
-                    error_log('Erro ao enviar email de recuperação para: ' . $emailParaEnvio);
-                    return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email. Verifique se o email está correto.', 'id' => 0], 500);
+                    error_log('Erro ao enviar email de recuperação');
+                    return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
                 }
             } catch (\Exception $e) {
                 error_log('Erro ao enviar email de recuperação: ' . $e->getMessage());
-                return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar email. Tente novamente mais tarde.', 'id' => 0], 500);
+                return $this->SendJson($response, ['status' => false, 'msg' => 'Erro ao enviar código por email!', 'id' => 0], 500);
             }
 
             return $this->SendJson($response, ['status' => true, 'msg' => 'Código enviado para o email! Verifique sua caixa de entrada.', 'id' => $user['id']], 200);
