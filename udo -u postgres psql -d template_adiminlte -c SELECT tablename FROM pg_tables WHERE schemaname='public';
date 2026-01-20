@@ -1,0 +1,14 @@
+          List of relations
+ Schema |    Name     | Type  | Owner 
+--------+-------------+-------+-------
+ public | cidade      | table | senac
+ public | cliente     | table | senac
+ public | contato     | table | senac
+ public | empresas    | table | senac
+ public | endereco    | table | senac
+ public | fornecedor  | table | senac
+ public | reset_senha | table | senac
+ public | uf          | table | senac
+ public | usuario     | table | senac
+(9 rows)
+

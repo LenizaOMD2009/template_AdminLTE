@@ -54,53 +54,139 @@ create_database_if_not_exists() {
 create_schema_objects() {
     echo ">> Conectando ao banco '${PG_DB}' e criando objetos..."
 sudo -u postgres psql -d "${PG_DB}" <<EOF
-    -- Tabela usuario
+    -- Tabela UF
+    CREATE TABLE IF NOT EXISTS uf(
+        id bigserial primary key,
+        sigla text,
+        nome text, 
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp
+    );
+
+    -- Tabela Cidade
+    CREATE TABLE IF NOT EXISTS cidade(
+        id bigserial primary key, 
+        id_uf bigint,
+        nome text,
+        ibge text,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp,
+        constraint cidade_id_uf foreign key (id_uf) references uf(id)
+    );
+
+    -- Tabela Cliente
+    CREATE TABLE IF NOT EXISTS cliente(
+        id bigserial primary key,
+        nome_fantasia text,
+        sobrenome_razao text,
+        cpf_cnpj text,
+        rg_ie text,
+        data_nascimento_abertura date,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp
+    );
+
+    -- Tabela Usuario
     CREATE TABLE IF NOT EXISTS usuario (
-        id bigserial PRIMARY KEY,
+        id bigserial primary key,
         nome text,
         sobrenome text,
         cpf text,
         rg text,
-        data_nascimento date,
         senha text,
-        ativo boolean DEFAULT false,
-        administrador boolean DEFAULT false,
-        codigo_verificacao text,
-        data_cadastro timestamp DEFAULT CURRENT_TIMESTAMP,
-        data_alteracao timestamp DEFAULT CURRENT_TIMESTAMP
+        codigo_recuperacao text,
+        ativo boolean default false,
+        administrador boolean default false,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp
     );
-    -- Tabela contato
-    CREATE TABLE IF NOT EXISTS contato (
-        id bigserial PRIMARY KEY,
+
+    -- Tabela Empresas
+    CREATE TABLE IF NOT EXISTS empresas(
+        id bigserial primary key,
+        nome_fantasia text,
+        sobrenome_razao text,
+        cpf_cnpj text,
+        rg_ie text,
+        data_nascimento_abertura date,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp
+    );
+
+    -- Tabela Fornecedor
+    CREATE TABLE IF NOT EXISTS fornecedor(
+        id bigserial primary key,
+        nome_fantasia text,
+        sobrenome_razao text,
+        cpf_cnpj text,
+        rg_ie text,
+        data_nascimento_abertura date,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp
+    );
+
+    -- Tabela Endereco
+    CREATE TABLE IF NOT EXISTS endereco(
+        id bigserial primary key, 
+        id_cidade bigint,
+        id_cliente bigint,
         id_usuario bigint,
+        id_empresas bigint,
+        id_fornecedor bigint,
+        nome text,
+        cep text,
+        numero text,
+        logradouro text,
+        bairro text,
+        complemento text,
+        referencia text,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp,
+        constraint endereco_id_cidade foreign key (id_cidade) references cidade(id),
+        constraint endereco_id_usuario foreign key (id_usuario) references usuario(id),
+        constraint endereco_id_cliente foreign key (id_cliente) references cliente(id),
+        constraint endereco_id_empresas foreign key (id_empresas) references empresas(id),
+        constraint endereco_id_fornecedor foreign key (id_fornecedor) references fornecedor(id)
+    );
+
+    -- Tabela Contato
+    CREATE TABLE IF NOT EXISTS contato(
+        id bigserial primary key,
+        id_cliente bigint,
+        id_usuario bigint,
+        id_empresas bigint,
+        id_fornecedor bigint,
         tipo text,
         contato text,
-        data_cadastro timestamp,
-        data_alteracao timestamp,
-        CONSTRAINT contato_id_usuario_fkey FOREIGN KEY (id_usuario)
-            REFERENCES public.usuario (id)
-            ON UPDATE NO ACTION
-            ON DELETE NO ACTION
+        endereco_contato text,
+        data_cadastro timestamp default current_timestamp,
+        data_alteracao timestamp default current_timestamp,
+        constraint contato_id_usuario foreign key (id_usuario) references usuario(id),
+        constraint contato_id_cliente foreign key (id_cliente) references cliente(id),
+        constraint contato_id_empresas foreign key (id_empresas) references empresas(id),
+        constraint contato_id_fornecedor foreign key (id_fornecedor) references fornecedor(id)
     );
+
     -- View vw_usuario_contatos
     CREATE OR REPLACE VIEW vw_usuario_contatos AS
-    SELECT u.id,
+    SELECT 
+        u.id,
         u.nome,
         u.sobrenome,
         u.cpf,
         u.rg,
-        u.senha,
         u.ativo,
         u.administrador,
-        u.codigo_verificacao,
-        MAX(CASE WHEN c.tipo = 'email' THEN c.contato ELSE NULL END) AS email,
-        MAX(CASE WHEN c.tipo = 'celular' THEN c.contato ELSE NULL END) AS celular,
-        MAX(CASE WHEN c.tipo = 'whatsapp' THEN c.contato ELSE NULL END) AS whatsapp,
+        u.senha,
+        u.codigo_recuperacao,
+        MAX(CASE WHEN c.tipo = 'email' THEN c.contato END) AS email,
+        MAX(CASE WHEN c.tipo = 'celular' THEN c.contato END) AS celular,
+        MAX(CASE WHEN c.tipo = 'whatsapp' THEN c.contato END) AS whatsapp,
         u.data_cadastro,
         u.data_alteracao
     FROM usuario u
     LEFT JOIN contato c ON c.id_usuario = u.id
-    GROUP BY u.id, u.nome, u.sobrenome, u.cpf, u.rg, u.data_cadastro, u.data_alteracao;
+    GROUP BY u.id, u.nome, u.sobrenome, u.cpf, u.rg, u.ativo, u.administrador, u.senha, u.codigo_recuperacao, u.data_cadastro, u.data_alteracao;
 EOF
     echo "   - Tabelas e view verificadas/criadas com sucesso."
 }
