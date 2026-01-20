@@ -5,7 +5,9 @@ const InsertButton = document.getElementById('insert');
 const FieldPassword = document.getElementById('campo_senha');
 const Action = document.getElementById('acao');
 
-$('#cpf').inputmask({ "mask": ["999.999.999-99", "99.999.999/9999-99"] });
+// Aplicar máscaras
+$('#cpf').inputmask({ "mask": "999.999.999-99" });
+$('#rg').inputmask({ "mask": "99.999.999" });
 
 async function insert() {
     //Valida todos os campos do formulário
@@ -55,6 +57,10 @@ async function insert() {
         timerProgressBar: true,
         didOpen: () => {
             Swal.showLoading();
+        },
+        willClose: () => {
+            //Redireciona automaticamente para a lista de usuários
+            window.location.href = '/usuario/lista';
         }
     });
 }
@@ -99,6 +105,10 @@ async function update() {
         timerProgressBar: true,
         didOpen: () => {
             Swal.showLoading();
+        },
+        willClose: () => {
+            //Redireciona automaticamente para a lista de usuários
+            window.location.href = '/usuario/lista';
         }
     });
 }

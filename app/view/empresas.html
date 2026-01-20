@@ -20,21 +20,22 @@
             <div class="col-md-4">
                 <label for="cpf_cnpj" class="form-label">CPF/CNPJ</label>
                 <input type="text" class="form-control" id="cpf_cnpj" name="cpf_cnpj" placeholder="Por favor digite seu cpf_cnpj"
-                required value="{{ empresas.cpf_cnpj }}">
+                required data-rule-cpfOrCnpj="true" value="{{ empresas.cpf_cnpj }}">
+                <small class="form-text text-muted">Digite um CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)</small>
             </div>
             <div class="col-md-6">
                 <label for="rg_ie" class="form-label">RG/IE</label>
-                <input type="text" class="form-control" id="rg_ie" name="rg_ie" placeholder="Digite seu rg_ie" required value="{{ empresas.rg_ie }}">
+                <input type="text" class="form-control" id="rg_ie" name="rg_ie" placeholder="Digite seu rg_ie" required data-rule-rg="true" value="{{ empresas.rg_ie }}">
                 <div class="invalid-feedback">
-                    seu rg_ie
+                    RG/IE inválido
                 </div>
             </div>
             <div class="col-md-6">
                 <label for="data_nascimento_abertura" class="form-label">Data de Nascimento/Abertura</label>
                 <input type="date" class="form-control" id="data_nascimento_abertura" name="data_nascimento_abertura"
-                    placeholder="Digite sua data de nascimento" required value="{{ empresas.data_nascimento_abertura }}">
+                    placeholder="Digite sua data de nascimento" required data-rule-validDate="true" value="{{ empresas.data_nascimento_abertura }}">
                     <div class="invalid-feedback">
-                        Por favor digite sua data de nascimento.
+                        Por favor digite uma data válida.
                 </div>
             </div>
             <div class="col-12">

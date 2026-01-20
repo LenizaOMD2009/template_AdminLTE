@@ -10,7 +10,9 @@ if (!Action) {
     console.error('Elemento acao não encontrado no formulário');
 }
 
-$('#cpf').inputmask({ "mask": ["999.999.999-99", "99.999.999/9999-99"] });
+// Aplicar máscaras
+$('#cpf_cnpj').inputmask({ "mask": ["999.999.999-99", "99.999.999/9999-99"] });
+$('#rg_ie').inputmask({ "mask": "99.999.999" });
 
 async function insert() {
     //Valida todos os campos do formulário
@@ -48,8 +50,6 @@ async function insert() {
     document.getElementById('acao').value = 'e';
     //Setamos o valor do campos ID para que se necessário alterar o registro
     document.getElementById('id').value = response.id;
-    //Redireciona automaticamente para a lista de clientes após insert bem-sucedido
-    window.location.href = '/cliente/lista';
     Swal.fire({
         icon: "success",
         title: response.msg,
@@ -58,6 +58,10 @@ async function insert() {
         timerProgressBar: true,
         didOpen: () => {
             Swal.showLoading();
+        },
+        willClose: () => {
+            //Redireciona automaticamente para a lista de clientes após insert bem-sucedido
+            window.location.href = '/cliente/lista';
         }
     });
 }
@@ -102,6 +106,10 @@ async function update() {
         timerProgressBar: true,
         didOpen: () => {
             Swal.showLoading();
+        },
+        willClose: () => {
+            //Redireciona automaticamente para a lista de clientes
+            window.location.href = '/cliente/lista';
         }
     });
 }
