@@ -9,7 +9,9 @@ define('DIR_VIEW', ROOT . '/app/view');
 #$_SERVER['HTTP_HOST'] : Indica o domínio (host) que foi chamado na URL pelo navegador. Domínio principal meusite.com ou localhost
 #$_SERVER['REQUEST_SCHEME'] : Indica o protocolo usado na requisição atual. podendo ser http ou https
 #Criamos uma constante chamada HOME que guarda automaticamente o endereço principal do site.
-define('HOME', $_SERVER['HTTP_CF_VISITOR'] . '://' . $_SERVER['HTTP_HOST']);
+$scheme = $_SERVER['REQUEST_SCHEME'] ?? 'https';
+$host = $_SERVER['HTTP_HOST'];
+define('HOME', $scheme . '://' . $host);
 #Configurações E-mail
 define('CONFIG_SMTP_EMAIL',[
     'host' => 'smtp.titan.email',
